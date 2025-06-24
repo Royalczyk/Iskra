@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iskra - Gra do Nauki Japońskiego</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Mochiy+Pop+One&display=swap" rel="stylesheet">
+    <style>
+        /* Definicje zmiennych kolorów dla motywów */
+        :root { --shadow-color: rgba(79, 70, 229, 0.5); }
+        .theme-cyberpunk {
+            --bg-primary: #111827; --bg-secondary: #1f2937; --bg-tertiary: #374151; --bg-interactive: #4b5563;
+            --text-primary: #f9fafb; --text-secondary: #9ca3af; --text-on-accent: #ffffff;
+            --accent-primary: #4f46e5; --accent-primary-hover: #4338ca; --accent-secondary: #818cf8;
+            --accent-katakana: #2dd4bf; --accent-yoon: #facc15;
+            --feedback-correct: #4ade80; --feedback-wrong: #f87171; --shadow-color: rgba(79, 70, 229, 0.5);
+        }
+        .theme-sakura {
+            --bg-primary: #fff1f2; --bg-secondary: #ffe4e6; --bg-tertiary: #fecdd3; --bg-interactive: #fda4af;
+            --text-primary: #881337; --text-secondary: #be123c; --text-on-accent: #ffffff;
+            --accent-primary: #e11d48; --accent-primary-hover: #be123c; --accent-secondary: #f43f5e;
+            --accent-katakana: #059669; --accent-yoon: #ea580c;
+            --feedback-correct: #16a34a; --feedback-wrong: #dc2626; --shadow-color: rgba(225, 29, 72, 0.4);
+        }
+        .theme-matcha {
+            --bg-primary: #f0fdf4; --bg-secondary: #dcfce7; --bg-tertiary: #bbf7d0; --bg-interactive: #86efac;
+            --text-primary: #14532d; --text-secondary: #166534; --text-on-accent: #ffffff;
+            --accent-primary: #16a34a; --accent-primary-hover: #15803d; --accent-secondary: #22c55e;
+            --accent-katakana: #c2410c; --accent-yoon: #7e22ce;
+            --feedback-correct: #16a34a; --feedback-wrong: #b91c1c; --shadow-color: rgba(22, 163, 74, 0.4);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            transition: background-color 0.3s ease;
+        }
+        .kana-font { font-family: 'Mochiy+Pop+One', sans-serif; }
+        .screen { transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out; }
+        .screen.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; position: absolute; }
+        .kana-btn.selected {
+            background-color: var(--accent-primary); color: var(--text-on-accent);
+            transform: scale(1.05); box-shadow: 0 0 15px var(--shadow-color);
+        }
+        input[type="radio"]:checked + label { background-color: var(--accent-primary); color: var(--text-on-accent); }
+        .theme-btn.active { box-shadow: 0 0 0 3px var(--accent-secondary); transform: scale(1.05); }
+
+        /* NOWE Animacje Logo */
+        #logo-iskra {
+            transform-origin: center;
+            opacity: 0;
+            transform: scale(0.5) rotate(-15deg);
+            animation: pop-in 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.2s forwards;
+        }
+        @keyframes pop-in {
+            to { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        
+        /* Istniejące animacje */
+        @keyframes shake-horizontal { 0%, 100% { transform: translateX(0); } 10%, 30%, 50%, 70% { transform: translateX(-8px); } 20%, 40%, 60%, 80% { transform: translateX(8px); } }
+        .animate-shake { animation: shake-horizontal 0.5s ease-in-out; }
+    </style>
+</head>
+<body class="bg-[var(--bg-primary)] text-[var(--text-primary)] flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-3xl mx-auto">
+
+        <!-- ===== Ekran Konfiguracji ===== -->
+        <div id="setup-screen" class="screen w-full">
+            <div class="bg-[var(--bg-secondary)] p-6 sm:p-8 rounded-2xl shadow-2xl">
+                <div class="flex items-center justify-center gap-3 mb-2">
+                    <!-- NOWE Logo Kaligraficzne -->
+                    <svg id="logo-iskra" class="w-10 h-10 text-[var(--accent-secondary)]" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.4,2.5c-0.2-0.5-0.8-0.7-1.3-0.5C10.6,2.2,10.4,2.8,10.6,3.3l3.5,8.1L4.4,13.2c-0.5,0-1,0.5-0.9,1.1 c0.1,0.5,0.6,0.9,1.1,0.8l9.1-1.2l-3.3,7.6c-0.2,0.5,0.1,1.1,0.6,1.2c0.5,0.2,1.1-0.1,1.2-0.6l3.8-8.7l5.3-1.2 c0.5-0.1,0.9-0.6,0.8-1.1c-0.1-0.5-0.6-0.9-1.1-0.8l-5.8,1.3L12.4,2.5z"/>
+                    </svg>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-center kana-font text-[var(--accent-secondary)]">Iskra</h1>
+                </div>
+                <p class="text-center text-[var(--text-secondary)] mb-6">Wybierz tryb gry i znaki, które chcesz przećwiczyć.</p>
+
+                <!-- Wybór motywu -->
+                <div class="mb-6"><h3 class="text-lg font-bold text-center mb-3">Motyw</h3><div id="theme-switcher" class="flex justify-center gap-2 bg-[var(--bg-primary)] rounded-lg p-2 max-w-xl mx-auto"><button data-theme="cyberpunk" class="theme-btn w-1/3 text-center p-2 rounded-md font-semibold transition bg-[var(--bg-tertiary)] hover:opacity-80">Cyberpunk</button><button data-theme="sakura" class="theme-btn w-1/3 text-center p-2 rounded-md font-semibold transition bg-[var(--bg-tertiary)] hover:opacity-80">Sakura</button><button data-theme="matcha" class="theme-btn w-1/3 text-center p-2 rounded-md font-semibold transition bg-[var(--bg-tertiary)] hover:opacity-80">Matcha</button></div></div>
+
+                <!-- Wybór trybu gry -->
+                <div class="mb-6"><h3 class="text-lg font-bold text-center mb-3">Tryb Gry</h3><div class="grid grid-cols-1 sm:grid-cols-3 justify-center gap-2 bg-[var(--bg-primary)] rounded-lg p-2 max-w-xl mx-auto"><input type="radio" id="mode-classic" name="game-mode" value="classic" checked><label for="mode-classic" class="text-center p-2 rounded-md font-semibold transition cursor-pointer bg-[var(--bg-tertiary)] hover:opacity-80">Klasyczny</label><input type="radio" id="mode-reverse" name="game-mode" value="reverse"><label for="mode-reverse" class="text-center p-2 rounded-md font-semibold transition cursor-pointer bg-[var(--bg-tertiary)] hover:opacity-80">Odwrotny</label><input type="radio" id="mode-typing" name="game-mode" value="typing"><label for="mode-typing" class="text-center p-2 rounded-md font-semibold transition cursor-pointer bg-[var(--bg-tertiary)] hover:opacity-80">Pisanie</label></div></div>
+                
+                <!-- Zakładki wyboru znaków -->
+                <div class="flex justify-center border-b border-[var(--bg-tertiary)] mb-4"><button id="tab-hiragana" class="flex-1 p-3 font-semibold transition">Hiragana</button><button id="tab-katakana" class="flex-1 p-3 font-semibold transition">Katakana</button><button id="tab-yoon" class="flex-1 p-3 font-semibold transition">Yōon</button></div>
+
+                <!-- Kontenery na znaki -->
+                <div id="kana-selection-container" class="space-y-6">
+                    <div id="hiragana-grid" class="hidden"><div class="flex justify-between items-center mb-3"><h3 class="text-xl font-bold text-[var(--accent-secondary)]">Hiragana (ひらがな)</h3><div><button onclick="toggleAll('hiragana', true)" class="text-xs bg-[var(--bg-interactive)] hover:opacity-80 px-2 py-1 rounded-md">Wszystkie</button><button onclick="toggleAll('hiragana', false)" class="text-xs bg-[var(--bg-interactive)] hover:opacity-80 px-2 py-1 rounded-md ml-2">Żadne</button></div></div><div id="hiragana-chars" class="grid grid-cols-5 sm:grid-cols-10 gap-2"></div></div>
+                    <div id="katakana-grid" class="hidden"><div class="flex justify-between items-center mb-3"><h3 class="text-xl font-bold text-[var(--accent-katakana)]">Katakana (カタカナ)</h3><div><button onclick="toggleAll('katakana', true)" class="text-xs bg-[var(--bg-interactive)] hover:opacity-80 px-2 py-1 rounded-md">Wszystkie</button><button onclick="toggleAll('katakana', false)" class="text-xs bg-[var(--bg-interactive)] hover:opacity-80 px-2 py-1 rounded-md ml-2">Żadne</button></div></div><div id="katakana-chars" class="grid grid-cols-5 sm:grid-cols-10 gap-2"></div></div>
+                    <div id="yoon-grid" class="hidden"><div class="flex justify-between items-center mb-3"><h3 class="text-xl font-bold text-[var(--accent-yoon)]">Yōon (拗音)</h3><div><button onclick="toggleAll('yoon', true)" class="text-xs bg-[var(--bg-interactive)] hover:opacity-80 px-2 py-1 rounded-md">Wszystkie</button><button onclick="toggleAll('yoon', false)" class="text-xs bg-[var(--bg-interactive)] hover:opacity-80 px-2 py-1 rounded-md ml-2">Żadne</button></div></div><div id="yoon-chars" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div></div>
+                </div>
+                
+                <p id="setup-message" class="text-[var(--feedback-wrong)] text-center h-6 mt-4 font-semibold"></p>
+                <div class="mt-2 text-center"><button id="start-game-btn" class="w-full sm:w-auto bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--text-on-accent)] font-bold py-3 px-12 rounded-lg text-lg transition-transform hover:scale-105 shadow-lg">Rozpocznij Grę</button></div>
+            </div>
+        </div>
+
+        <!-- ===== Ekran Gry ===== -->
+        <div id="game-screen" class="screen hidden w-full"><div class="bg-[var(--bg-secondary)] p-6 sm:p-8 rounded-2xl shadow-2xl text-center"><div class="flex justify-between items-center mb-6"><div id="progress-text" class="text-lg font-semibold whitespace-nowrap mr-4">Pytanie: 1 / 10</div><div class="w-full bg-[var(--bg-tertiary)] rounded-full h-4"><div id="progress-bar" class="bg-[var(--feedback-correct)] h-4 rounded-full transition-all duration-300"></div></div><div id="score" class="ml-4 text-lg font-semibold whitespace-nowrap">Wynik: 0</div></div><div class="bg-[var(--bg-primary)] rounded-lg p-8 my-6 flex items-center justify-center" style="min-height: 200px;"><p id="question-display" class="kana-font text-8xl sm:text-9xl"></p></div><div id="feedback" class="h-8 mb-4 text-xl font-bold"></div><div id="answer-options" class="grid grid-cols-2 gap-4"></div><div id="typing-container" class="hidden"><input type="text" id="typing-input" placeholder="Wpisz romaji i naciśnij Enter" class="w-full text-center text-xl p-3 rounded-lg bg-[var(--bg-secondary)] border-2 border-[var(--bg-interactive)] focus:outline-none focus:border-[var(--accent-primary)]"></div><button id="quit-game-btn" class="mt-8 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-transform hover:scale-105">Zakończ</button></div></div>
+
+        <!-- ===== Ekran Wyników ===== -->
+        <div id="results-screen" class="screen hidden w-full"><div class="bg-[var(--bg-secondary)] p-8 rounded-2xl shadow-2xl text-center"><h2 class="text-3xl font-bold mb-4 kana-font text-[var(--accent-secondary)]">Koniec Gry!</h2><p class="text-xl mb-2">Twój wynik końcowy:</p><p id="final-score" class="text-5xl font-bold text-[var(--feedback-correct)] mb-8">18 / 20</p><div id="mistakes-container" class="mb-8"><h3 class="text-xl font-semibold mb-3">Znaki do powtórki:</h3><div id="mistakes-list" class="flex flex-wrap justify-center gap-3 text-lg"></div></div><button id="play-again-btn" class="w-full sm:w-auto bg-[var(--accent-primary)] hover:bg-[var(--accent-primary-hover)] text-[var(--text-on-accent)] font-bold py-3 px-12 rounded-lg text-lg transition-transform hover:scale-105 shadow-lg">Zagraj Ponownie</button></div></div>
+    </div>
+
+    <script>
+        // Definicje znaków (bez zmian)
+        const KANA_DATA = { hiragana: [{ kana: 'あ', romaji: 'a' }, { kana: 'い', romaji: 'i' }, { kana: 'う', romaji: 'u' }, { kana: 'え', romaji: 'e' }, { kana: 'お', romaji: 'o' },{ kana: 'か', romaji: 'ka' }, { kana: 'き', romaji: 'ki' }, { kana: 'く', romaji: 'ku' }, { kana: 'け', romaji: 'ke' }, { kana: 'こ', romaji: 'ko' },{ kana: 'さ', romaji: 'sa' }, { kana: 'し', romaji: 'shi' }, { kana: 'す', romaji: 'su' }, { kana: 'せ', romaji: 'se' }, { kana: 'そ', romaji: 'so' },{ kana: 'た', romaji: 'ta' }, { kana: 'ち', romaji: 'chi' }, { kana: 'つ', romaji: 'tsu' }, { kana: 'て', romaji: 'te' }, { kana: 'と', romaji: 'to' },{ kana: 'な', romaji: 'na' }, { kana: 'に', romaji: 'ni' }, { kana: 'ぬ', romaji: 'nu' }, { kana: 'ね', romaji: 'ne' }, { kana: 'の', romaji: 'no' },{ kana: 'は', romaji: 'ha' }, { kana: 'ひ', romaji: 'hi' }, { kana: 'ふ', romaji: 'fu' }, { kana: 'へ', romaji: 'he' }, { kana: 'ほ', romaji: 'ho' },{ kana: 'ま', romaji: 'ma' }, { kana: 'み', romaji: 'mi' }, { kana: 'む', romaji: 'mu' }, { kana: 'め', romaji: 'me' }, { kana: 'も', romaji: 'mo' },{ kana: 'や', romaji: 'ya' }, { kana: 'ゆ', romaji: 'yu' }, { kana: 'よ', romaji: 'yo' },{ kana: 'ら', romaji: 'ra' }, { kana: 'り', romaji: 'ri' }, { kana: 'る', romaji: 'ru' }, { kana: 'れ', romaji: 're' }, { kana: 'ろ', romaji: 'ro' },{ kana: 'わ', romaji: 'wa' }, { kana: 'を', romaji: 'wo' }, { kana: 'ん', romaji: 'n' },{ kana: 'が', romaji: 'ga' }, { kana: 'ぎ', romaji: 'gi' }, { kana: 'ぐ', romaji: 'gu' }, { kana: 'げ', romaji: 'ge' }, { kana: 'ご', romaji: 'go' },{ kana: 'ざ', romaji: 'za' }, { kana: 'じ', romaji: 'ji' }, { kana: 'ず', romaji: 'zu' }, { kana: 'ぜ', romaji: 'ze' }, { kana: 'ぞ', romaji: 'zo' },{ kana: 'だ', romaji: 'da' }, { kana: 'ぢ', romaji: 'ji' }, { kana: 'づ', romaji: 'zu' }, { kana: 'で', romaji: 'de' }, { kana: 'ど', romaji: 'do' },{ kana: 'ば', romaji: 'ba' }, { kana: 'び', romaji: 'bi' }, { kana: 'ぶ', romaji: 'bu' }, { kana: 'べ', romaji: 'be' }, { kana: 'ぼ', romaji: 'bo' },{ kana: 'ぱ', romaji: 'pa' }, { kana: 'ぴ', romaji: 'pi' }, { kana: 'ぷ', romaji: 'pu' }, { kana: 'ぺ', romaji: 'pe' }, { kana: 'ぽ', romaji: 'po' }], katakana: [{ kana: 'ア', romaji: 'a' }, { kana: 'イ', romaji: 'i' }, { kana: 'ウ', romaji: 'u' }, { kana: 'エ', romaji: 'e' }, { kana: 'オ', romaji: 'o' },{ kana: 'カ', romaji: 'ka' }, { kana: 'キ', romaji: 'ki' }, { kana: 'ク', romaji: 'ku' }, { kana: 'ケ', romaji: 'ke' }, { kana: 'コ', romaji: 'ko' },{ kana: 'サ', romaji: 'sa' }, { kana: 'シ', romaji: 'shi' }, { kana: 'ス', romaji: 'su' }, { kana: 'セ', romaji: 'se' }, { kana: 'ソ', romaji: 'so' },{ kana: 'タ', romaji: 'ta' }, { kana: 'チ', romaji: 'chi' }, { kana: 'ツ', romaji: 'tsu' }, { kana: 'テ', romaji: 'te' }, { kana: 'ト', romaji: 'to' },{ kana: 'ナ', romaji: 'na' }, { kana: 'ニ', romaji: 'ni' }, { kana: 'ヌ', romaji: 'nu' }, { kana: 'ネ', romaji: 'ne' }, { kana: 'ノ', romaji: 'no' },{ kana: 'ハ', romaji: 'ha' }, { kana: 'ヒ', romaji: 'hi' }, { kana: 'フ', romaji: 'fu' }, { kana: 'ヘ', romaji: 'he' }, { kana: 'ホ', romaji: 'ho' },{ kana: 'マ', romaji: 'ma' }, { kana: 'ミ', romaji: 'mi' }, { kana: 'ム', romaji: 'mu' }, { kana: 'メ', romaji: 'me' }, { kana: 'モ', romaji: 'mo' },{ kana: 'ヤ', romaji: 'ya' }, { kana: 'ユ', romaji: 'yu' }, { kana: 'ヨ', romaji: 'yo' },{ kana: 'ラ', romaji: 'ra' }, { kana: 'リ', romaji: 'ri' }, { kana: 'ル', romaji: 'ru' }, { kana: 'レ', romaji: 're' }, { kana: 'ロ', romaji: 'ro' },{ kana: 'ワ', romaji: 'wa' }, { kana: 'ヲ', romaji: 'wo' }, { kana: 'ン', romaji: 'n' },{ kana: 'ガ', romaji: 'ga' }, { kana: 'ギ', romaji: 'gi' }, { kana: 'グ', romaji: 'gu' }, { kana: 'ゲ', romaji: 'ge' }, { kana: 'ゴ', romaji: 'go' },{ kana: 'ザ', romaji: 'za' }, { kana: 'ジ', romaji: 'ji' }, { kana: 'ズ', romaji: 'zu' }, { kana: 'ゼ', romaji: 'ze' }, { kana: 'ゾ', romaji: 'zo' },{ kana: 'ダ', romaji: 'da' }, { kana: 'ヂ', romaji: 'ji' }, { kana: 'ヅ', romaji: 'zu' }, { kana: 'デ', romaji: 'de' }, { kana: 'ド', romaji: 'do' },{ kana: 'バ', romaji: 'ba' }, { kana: 'ビ', romaji: 'bi' }, { kana: 'ブ', romaji: 'bu' }, { kana: 'ベ', romaji: 'be' }, { kana: 'ボ', romaji: 'bo' },{ kana: 'パ', romaji: 'pa' }, { kana: 'ピ', romaji: 'pi' }, { kana: 'プ', romaji: 'pu' }, { kana: 'ペ', romaji: 'pe' }, { kana: 'ポ', romaji: 'po' }], yoon: [ { kana: 'きゃ', romaji: 'kya' }, { kana: 'きゅ', romaji: 'kyu' }, { kana: 'きょ', romaji: 'kyo' }, { kana: 'ぎゃ', romaji: 'gya' }, { kana: 'ぎゅ', romaji: 'gyu' }, { kana: 'ぎょ', romaji: 'gyo' }, { kana: 'しゃ', romaji: 'sha' }, { kana: 'しゅ', romaji: 'shu' }, { kana: 'しょ', romaji: 'sho' }, { kana: 'じゃ', romaji: 'ja' }, { kana: 'じゅ', romaji: 'ju' }, { kana: 'じょ', romaji: 'jo' }, { kana: 'ちゃ', romaji: 'cha' }, { kana: 'ちゅ', romaji: 'chu' }, { kana: 'ちょ', romaji: 'cho' }, { kana: 'にゃ', romaji: 'nya' }, { kana: 'にゅ', romaji: 'nyu' }, { kana: 'にょ', romaji: 'nyo' }, { kana: 'ひゃ', romaji: 'hya' }, { kana: 'ひゅ', romaji: 'hyu' }, { kana: 'ひょ', romaji: 'hyo' }, { kana: 'びゃ', romaji: 'bya' }, { kana: 'びゅ', romaji: 'byu' }, { kana: 'びょ', romaji: 'byo' }, { kana: 'ぴゃ', romaji: 'pya' }, { kana: 'ぴゅ', romaji: 'pyu' }, { kana: 'ぴょ', romaji: 'pyo' }, { kana: 'みゃ', romaji: 'mya' }, { kana: 'みゅ', romaji: 'myu' }, { kana: 'みょ', romaji: 'myo' }, { kana: 'りゃ', romaji: 'rya' }, { kana: 'りゅ', romaji: 'ryu' }, { kana: 'りょ', romaji: 'ryo' }, { kana: 'キャ', romaji: 'kya' }, { kana: 'キュ', romaji: 'kyu' }, { kana: 'キョ', romaji: 'kyo' }, { kana: 'ギャ', romaji: 'gya' }, { kana: 'ギュ', romaji: 'gyu' }, { kana: 'ギョ', romaji: 'gyo' }, { kana: 'シャ', romaji: 'sha' }, { kana: 'シュ', romaji: 'shu' }, { kana: 'ショ', romaji: 'sho' }, { kana: 'ジャ', romaji: 'ja' }, { kana: 'ジュ', romaji: 'ju' }, { kana: 'ジョ', romaji: 'jo' }, { kana: 'チャ', romaji: 'cha' }, { kana: 'チュ', romaji: 'chu' }, { kana: 'チョ', romaji: 'cho' }, { kana: 'ニャ', romaji: 'nya' }, { kana: 'ニュ', romaji: 'nyu' }, { kana: 'ニョ', romaji: 'nyo' }, { kana: 'ヒャ', romaji: 'hya' }, { kana: 'ヒュ', romaji: 'hyu' }, { kana: 'ヒョ', romaji: 'hyo' }, { kana: 'ビャ', romaji: 'bya' }, { kana: 'ビュ', romaji: 'byu' }, { kana: 'ビョ', romaji: 'byo' }, { kana: 'ピャ', romaji: 'pya' }, { kana: 'ピュ', romaji: 'pyu' }, { kana: 'ピョ', romaji: 'pyo' }, { kana: 'ミャ', romaji: 'mya' }, { kana: 'ミュ', romaji: 'myu' }, { kana: 'ミョ', romaji: 'myo' }, { kana: 'リャ', romaji: 'rya' }, { kana: 'リュ', romaji: 'ryu' }, { kana: 'リョ', romaji: 'ryo' }] };
+        const ALL_KANA = [...KANA_DATA.hiragana, ...KANA_DATA.katakana, ...KANA_DATA.yoon];
+        
+        // Elementy DOM
+        const dom = {
+            body: document.body,
+            screens: { setup: document.getElementById('setup-screen'), game: document.getElementById('game-screen'), results: document.getElementById('results-screen') },
+            setupMessage: document.getElementById('setup-message'),
+            charContainers: { hiragana: document.getElementById('hiragana-chars'), katakana: document.getElementById('katakana-chars'), yoon: document.getElementById('yoon-chars') },
+            tabs: { hiragana: document.getElementById('tab-hiragana'), katakana: document.getElementById('tab-katakana'), yoon: document.getElementById('tab-yoon') },
+            questionDisplay: document.getElementById('question-display'),
+            answerOptionsContainer: document.getElementById('answer-options'),
+            typingContainer: document.getElementById('typing-container'),
+            typingInput: document.getElementById('typing-input'),
+            feedback: document.getElementById('feedback'),
+            finalScore: document.getElementById('final-score'),
+            mistakesList: document.getElementById('mistakes-list'),
+            themeSwitcher: document.getElementById('theme-switcher'),
+            progress: { text: document.getElementById('progress-text'), bar: document.getElementById('progress-bar'), score: document.getElementById('score') }
+        };
+
+        // Zmienne stanu gry
+        let state = { gameMode: 'classic', questionQueue: [], currentQuestion: null, score: 0, questionsAsked: 0, mistakes: [], currentTheme: 'cyberpunk' };
+        let synth;
+
+        function initAudio() { if (!synth) synth = new Tone.Synth().toDestination(); }
+
+        // --- Funkcje Główne ---
+        function switchScreen(screenToShow) { Object.values(dom.screens).forEach(screen => screen.classList.add('hidden')); dom.screens[screenToShow].classList.remove('hidden'); }
+        function switchTab(tabToShow) { Object.keys(dom.tabs).forEach(key => { const tabEl = dom.tabs[key], gridEl = document.getElementById(`${key}-grid`); if (key === tabToShow) { tabEl.classList.add('border-[var(--accent-primary)]', 'text-[var(--accent-primary)]', 'border-b-2'); gridEl.classList.remove('hidden'); } else { tabEl.classList.remove('border-[var(--accent-primary)]', 'text-[var(--accent-primary)]', 'border-b-2'); gridEl.classList.add('hidden'); } }); }
+        function toggleAll(kanaType, select) { dom.charContainers[kanaType].querySelectorAll('button').forEach(btn => { if (select) { btn.classList.add('selected'); } else { btn.classList.remove('selected'); } }); }
+
+        function setTheme(themeName) {
+            dom.body.className = `theme-${themeName} bg-[var(--bg-primary)] text-[var(--text-primary)] flex items-center justify-center min-h-screen p-4`;
+            state.currentTheme = themeName;
+            // Update active button state
+            dom.themeSwitcher.querySelectorAll('button').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === themeName);
+            });
+            saveSettings();
+        }
+
+        function saveSettings() {
+            const selectedKanaList = [];
+            document.querySelectorAll('.kana-btn.selected').forEach(btn => selectedKanaList.push(btn.dataset.kana));
+            const settings = {
+                gameMode: document.querySelector('input[name="game-mode"]:checked').value,
+                selectedKana: selectedKanaList,
+                theme: state.currentTheme
+            };
+            localStorage.setItem('iskraSettings', JSON.stringify(settings));
+        }
+
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('iskraSettings'));
+            if (!settings) { setTheme('cyberpunk'); return; }
+            setTheme(settings.theme || 'cyberpunk');
+            if (settings.gameMode) { const modeInput = document.getElementById(`mode-${settings.gameMode}`); if (modeInput) modeInput.checked = true; }
+            if (settings.selectedKana && Array.isArray(settings.selectedKana)) { settings.selectedKana.forEach(kanaChar => { const btn = document.querySelector(`.kana-btn[data-kana="${kanaChar}"]`); if (btn) btn.classList.add('selected'); }); }
+        }
+
+        function startGame() {
+            initAudio(); Tone.start();
+            state.gameMode = document.querySelector('input[name="game-mode"]:checked').value;
+            let selectedKana = [];
+            document.querySelectorAll('.kana-btn.selected').forEach(btn => { selectedKana.push({ kana: btn.dataset.kana, romaji: btn.dataset.romaji }); });
+            if (selectedKana.length < 4) { dom.setupMessage.textContent = 'Wybierz co najmniej 4 znaki, żeby rozpocząć grę!'; return; }
+            saveSettings();
+            dom.setupMessage.textContent = '';
+            state.questionQueue = [...selectedKana].sort(() => Math.random() - 0.5);
+            state.score = 0; state.questionsAsked = 0; state.mistakes = [];
+            switchScreen('game');
+            updateUiOnNextQuestion();
+            generateQuestion();
+        }
+
+        function generateQuestion() {
+            if (state.questionsAsked >= state.questionQueue.length) { showResults(); return; }
+            dom.feedback.textContent = '';
+            state.currentQuestion = state.questionQueue[state.questionsAsked];
+            dom.questionDisplay.classList.remove('romaji-question', 'kana-font');
+            dom.answerOptionsContainer.classList.add('hidden');
+            dom.typingContainer.classList.add('hidden');
+            if (state.gameMode === 'classic' || state.gameMode === 'reverse') { dom.answerOptionsContainer.classList.remove('hidden'); generateMultipleChoiceQuestion(); } 
+            else { dom.typingContainer.classList.remove('hidden'); generateTypingQuestion(); }
+        }
+
+        function generateMultipleChoiceQuestion() {
+            let options, correctAnswer;
+            if (state.gameMode === 'classic') {
+                dom.questionDisplay.textContent = state.currentQuestion.kana; dom.questionDisplay.classList.add('kana-font');
+                correctAnswer = state.currentQuestion.romaji; options = [correctAnswer];
+                while (options.length < 4) { const randomKana = ALL_KANA[Math.floor(Math.random() * ALL_KANA.length)]; if (!options.includes(randomKana.romaji)) { options.push(randomKana.romaji); } }
+            } else {
+                dom.questionDisplay.textContent = state.currentQuestion.romaji; dom.questionDisplay.classList.add('romaji-question');
+                correctAnswer = state.currentQuestion.kana; options = [correctAnswer];
+                while (options.length < 4) { const randomKana = ALL_KANA[Math.floor(Math.random() * ALL_KANA.length)]; if (!options.includes(randomKana.kana)) { options.push(randomKana.kana); } }
+            }
+            dom.answerOptionsContainer.innerHTML = '';
+            options.sort(() => Math.random() - 0.5).forEach(option => {
+                const button = document.createElement('button'); button.textContent = option;
+                if (state.gameMode === 'reverse') { button.classList.add('kana-font'); }
+                button.className = 'answer-btn bg-[var(--bg-tertiary)] hover:opacity-80 p-4 rounded-lg text-lg font-semibold transition-all duration-200';
+                button.onclick = () => checkAnswer(option, button, correctAnswer);
+                dom.answerOptionsContainer.appendChild(button);
+            });
+        }
+        
+        function generateTypingQuestion() {
+            dom.questionDisplay.textContent = state.currentQuestion.kana; dom.questionDisplay.classList.add('kana-font');
+            dom.typingInput.value = ''; dom.typingInput.focus();
+        }
+
+        function checkAnswer(selectedValue, button, correctAnswer) { handleAnswer(selectedValue === correctAnswer, correctAnswer, button); }
+        function checkTypingAnswer() {
+            const userAnswer = dom.typingInput.value.trim().toLowerCase(); if (userAnswer === '') return;
+            handleAnswer(userAnswer === state.currentQuestion.romaji, state.currentQuestion.romaji, null);
+        }
+        
+        function handleAnswer(isCorrect, correctAnswer, buttonElement) {
+            if(state.gameMode !== 'typing') dom.answerOptionsContainer.querySelectorAll('button').forEach(btn => btn.disabled = true); else dom.typingInput.disabled = true;
+            if (isCorrect) {
+                state.score++; dom.feedback.textContent = 'Dobrze!'; dom.feedback.className = 'h-8 mb-4 text-xl font-bold text-[var(--feedback-correct)] animate-pulse';
+                if(buttonElement) buttonElement.style.backgroundColor = 'var(--feedback-correct)';
+                if(synth) synth.triggerAttackRelease("C5", "8n");
+            } else {
+                dom.feedback.innerHTML = `Źle! Poprawna odpowiedź: <span class="font-bold">${correctAnswer}</span>`; dom.feedback.className = 'h-8 mb-4 text-xl font-bold text-[var(--feedback-wrong)]';
+                dom.screens.game.classList.add('animate-shake');
+                if(buttonElement) {
+                    buttonElement.style.backgroundColor = 'var(--feedback-wrong)';
+                    dom.answerOptionsContainer.querySelectorAll('button').forEach(btn => { if (btn.textContent === correctAnswer) { btn.style.backgroundColor = 'var(--feedback-correct)'; } });
+                }
+                state.mistakes.push(state.currentQuestion);
+                if(synth) synth.triggerAttackRelease("C3", "8n");
+            }
+            state.questionsAsked++;
+            setTimeout(() => {
+                if(state.gameMode === 'typing') dom.typingInput.disabled = false;
+                dom.feedback.classList.remove('animate-pulse');
+                dom.screens.game.classList.remove('animate-shake');
+                updateUiOnNextQuestion(); generateQuestion();
+            }, 1500);
+        }
+
+        function updateUiOnNextQuestion() {
+            dom.progress.score.textContent = `Wynik: ${state.score}`;
+            const totalQuestions = state.questionQueue.length;
+            dom.progress.text.textContent = `Pytanie: ${Math.min(state.questionsAsked + 1, totalQuestions)} / ${totalQuestions}`;
+            const progress = totalQuestions > 0 ? (state.questionsAsked / totalQuestions) * 100 : 0;
+            dom.progress.bar.style.width = `${progress}%`;
+        }
+
+        function showResults() {
+            switchScreen('results'); dom.finalScore.textContent = `${state.score} / ${state.questionQueue.length}`;
+            dom.mistakesList.innerHTML = '';
+            const mistakesContainer = document.getElementById('mistakes-container');
+            if (state.mistakes.length > 0) {
+                mistakesContainer.classList.remove('hidden');
+                const uniqueMistakes = [...new Map(state.mistakes.map(item => [item['kana'], item])).values()];
+                uniqueMistakes.forEach(mistake => { const el = document.createElement('span'); el.className = "bg-[var(--bg-tertiary)] rounded-md px-3 py-1 kana-font"; el.textContent = `${mistake.kana} (${mistake.romaji})`; dom.mistakesList.appendChild(el); });
+            } else {
+                mistakesContainer.classList.remove('hidden');
+                dom.mistakesList.innerHTML = '<p class="text-[var(--feedback-correct)] text-lg">Gratulacje, żadnych błędów!</p>';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            Object.keys(dom.charContainers).forEach(key => renderSelectionGrid(key, dom.charContainers[key]));
+            loadSettings();
+            switchTab('hiragana');
+            Object.keys(dom.tabs).forEach(key => { dom.tabs[key].addEventListener('click', () => switchTab(key)); });
+            dom.themeSwitcher.querySelectorAll('button').forEach(btn => { btn.addEventListener('click', () => setTheme(btn.dataset.theme)); });
+            document.getElementById('start-game-btn').addEventListener('click', startGame);
+            document.getElementById('play-again-btn').addEventListener('click', () => switchScreen('setup'));
+            document.getElementById('quit-game-btn').addEventListener('click', () => switchScreen('setup'));
+            dom.typingInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') checkTypingAnswer()});
+        });
+
+        function renderSelectionGrid(kanaType, container) { container.innerHTML = ''; KANA_DATA[kanaType].forEach(item => { const button = document.createElement('button'); button.textContent = item.kana; button.dataset.kana = item.kana; button.dataset.romaji = item.romaji; button.dataset.type = kanaType; button.className = 'kana-btn bg-[var(--bg-tertiary)] hover:opacity-80 rounded-lg p-2 text-xl font-bold kana-font focus:outline-none focus:ring-2 focus:ring-[var(--accent-secondary)]'; button.onclick = () => button.classList.toggle('selected'); container.appendChild(button); }); }
+    </script>
+</body>
+</html>
